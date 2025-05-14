@@ -1,4 +1,4 @@
-package entidades;
+package org.example.model.entidades;
 
 import jakarta.persistence.*;
 
@@ -16,7 +16,7 @@ public class categorias {
     private String nombre;
 
     @OneToMany(mappedBy = "idCategoria")
-    private Set<entidades.Producto> productos = new LinkedHashSet<>();
+    private Set<Producto> productos = new LinkedHashSet<>();
 
     public Integer getId() {
         return id;
@@ -34,11 +34,11 @@ public class categorias {
         this.nombre = nombre;
     }
 
-    public Set<entidades.Producto> getProductos() {
+    public Set<Producto> getProductos() {
         return productos;
     }
 
-    public void setProductos(Set<entidades.Producto> productos) {
+    public void setProductos(Set<Producto> productos) {
         this.productos = productos;
     }
 

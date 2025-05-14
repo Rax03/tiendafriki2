@@ -1,4 +1,4 @@
-package entidades;
+package org.example.model.entidades;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
@@ -14,13 +14,13 @@ public class ProductoProveedor {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_producto", nullable = false)
-    private entidades.Producto idProducto;
+    private Producto idProducto;
 
     @MapsId("idProveedor")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_proveedor", nullable = false)
-    private entidades.Proveedore idProveedor;
+    private Proveedore idProveedor;
 
     public ProductoProveedorId getId() {
         return id;
@@ -30,19 +30,19 @@ public class ProductoProveedor {
         this.id = id;
     }
 
-    public entidades.Producto getIdProducto() {
+    public Producto getIdProducto() {
         return idProducto;
     }
 
-    public void setIdProducto(entidades.Producto idProducto) {
+    public void setIdProducto(Producto idProducto) {
         this.idProducto = idProducto;
     }
 
-    public entidades.Proveedore getIdProveedor() {
+    public Proveedore getIdProveedor() {
         return idProveedor;
     }
 
-    public void setIdProveedor(entidades.Proveedore idProveedor) {
+    public void setIdProveedor(Proveedore idProveedor) {
         this.idProveedor = idProveedor;
     }
 

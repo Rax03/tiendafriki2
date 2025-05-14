@@ -1,4 +1,4 @@
-package entidades;
+package org.example.model.entidades;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
@@ -17,12 +17,12 @@ public class DetallesPedido {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_pedido", nullable = false)
-    private entidades.Pedido idPedido;
+    private Pedido idPedido;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_producto", nullable = false)
-    private entidades.Producto idProducto;
+    private Producto idProducto;
 
     @Column(name = "cantidad", nullable = false)
     private Integer cantidad;
@@ -38,19 +38,19 @@ public class DetallesPedido {
         this.id = id;
     }
 
-    public entidades.Pedido getIdPedido() {
+    public Pedido getIdPedido() {
         return idPedido;
     }
 
-    public void setIdPedido(entidades.Pedido idPedido) {
+    public void setIdPedido(Pedido idPedido) {
         this.idPedido = idPedido;
     }
 
-    public entidades.Producto getIdProducto() {
+    public Producto getIdProducto() {
         return idProducto;
     }
 
-    public void setIdProducto(entidades.Producto idProducto) {
+    public void setIdProducto(Producto idProducto) {
         this.idProducto = idProducto;
     }
 

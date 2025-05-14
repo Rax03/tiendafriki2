@@ -1,4 +1,4 @@
-package entidades;
+package org.example.model.entidades;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
@@ -43,7 +43,7 @@ public class Producto {
     private Set<DetallesPedido> detallesPedidos = new LinkedHashSet<>();
 
     @ManyToMany(mappedBy = "productos")
-    private Set<entidades.Proveedore> proveedores = new LinkedHashSet<>();
+    private Set<Proveedore> proveedores = new LinkedHashSet<>();
 
     public Integer getId() {
         return id;
@@ -109,11 +109,11 @@ public class Producto {
         this.detallesPedidos = detallesPedidos;
     }
 
-    public Set<entidades.Proveedore> getProveedores() {
+    public Set<Proveedore> getProveedores() {
         return proveedores;
     }
 
-    public void setProveedores(Set<entidades.Proveedore> proveedores) {
+    public void setProveedores(Set<Proveedore> proveedores) {
         this.proveedores = proveedores;
     }
 

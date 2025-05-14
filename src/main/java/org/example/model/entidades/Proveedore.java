@@ -1,4 +1,4 @@
-package entidades;
+package org.example.model.entidades;
 
 import jakarta.persistence.*;
 

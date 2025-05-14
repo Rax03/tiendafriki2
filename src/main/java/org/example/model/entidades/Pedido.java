@@ -1,4 +1,4 @@
-package entidades;
+package org.example.model.entidades;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
@@ -21,7 +21,7 @@ public class Pedido {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_cliente", nullable = false)
-    private entidades.Usuario idCliente;
+    private Usuario idCliente;
 
     @ColumnDefault("current_timestamp()")
     @Column(name = "fecha_pedido", nullable = false)
@@ -46,11 +46,11 @@ public class Pedido {
         this.id = id;
     }
 
-    public entidades.Usuario getIdCliente() {
+    public Usuario getIdCliente() {
         return idCliente;
     }
 
-    public void setIdCliente(entidades.Usuario idCliente) {
+    public void setIdCliente(Usuario idCliente) {
         this.idCliente = idCliente;
     }
 
