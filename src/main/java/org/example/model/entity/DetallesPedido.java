@@ -1,4 +1,4 @@
-package org.example.model.entidades;
+package org.example.model.entity;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
@@ -14,21 +14,29 @@ public class DetallesPedido {
     @Column(name = "id_detalle", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "id_pedido", nullable = false)
-    private Pedido idPedido;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "id_producto", nullable = false)
-    private Producto idProducto;
-
     @Column(name = "cantidad", nullable = false)
     private Integer cantidad;
 
     @Column(name = "precio", nullable = false, precision = 10, scale = 2)
     private BigDecimal precio;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "id_pedido", nullable = false)
+    private org.example.model.entity.Pedido idPedido;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "id_producto", nullable = false, referencedColumnName = "id_producto")
+    private Producto idProducto;
+
+    public DetallesPedido(Pedido pedido, Producto p, int cantidad, Float precio) {
+
+        this.idPedido = pedido;
+        this.idProducto = p;
+        this.cantidad = cantidad;
+        this.precio = BigDecimal.valueOf(precio);
+    }
 
     public Integer getId() {
         return id;
@@ -36,22 +44,6 @@ public class DetallesPedido {
 
     public void setId(Integer id) {
         this.id = id;
-    }
-
-    public Pedido getIdPedido() {
-        return idPedido;
-    }
-
-    public void setIdPedido(Pedido idPedido) {
-        this.idPedido = idPedido;
-    }
-
-    public Producto getIdProducto() {
-        return idProducto;
-    }
-
-    public void setIdProducto(Producto idProducto) {
-        this.idProducto = idProducto;
     }
 
     public Integer getCantidad() {
@@ -68,6 +60,22 @@ public class DetallesPedido {
 
     public void setPrecio(BigDecimal precio) {
         this.precio = precio;
+    }
+
+    public org.example.model.entity.Pedido getIdPedido() {
+        return idPedido;
+    }
+
+    public void setIdPedido(org.example.model.entity.Pedido idPedido) {
+        this.idPedido = idPedido;
+    }
+
+    public Producto getIdProducto() {
+        return idProducto;
+    }
+
+    public void setIdProducto(Producto idProducto) {
+        this.idProducto = idProducto;
     }
 
 }

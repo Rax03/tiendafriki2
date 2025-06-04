@@ -1,9 +1,11 @@
-package org.example.model.entidades;
+package org.example.model.entity;
 
 import jakarta.persistence.*;
+import org.example.model.entity.Enum.Rol;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -27,17 +29,41 @@ public class Usuario {
     @Column(name = "salt", nullable = false)
     private String salt;
 
-    @ColumnDefault("'CLIENTE'")
-    @Lob
+    @Enumerated(EnumType.STRING)
     @Column(name = "rol", nullable = false)
-    private String rol;
+    private Rol rol;
 
-    @ColumnDefault("current_timestamp()")
+    @ColumnDefault("current_timestamp(6)")
     @Column(name = "fecha_registro", nullable = false)
     private Instant fechaRegistro;
 
-    @OneToMany(mappedBy = "idCliente")
+    @OneToMany(mappedBy = "idUsuario")
     private Set<Pedido> pedidos = new LinkedHashSet<>();
+
+    public Usuario(Integer id, String nombre, String email, String contraseñaHash, String salt, Rol rol, Instant fechaRegistro, Set<Pedido> pedidos) {
+        this.id = id;
+        this.nombre = nombre;
+        this.email = email;
+        this.contraseñaHash = contraseñaHash;
+        this.salt = salt;
+        this.rol = rol;
+        this.fechaRegistro = fechaRegistro;
+        this.pedidos = pedidos;
+    }
+
+    public Usuario() {
+    }
+
+    public Usuario(int i, String nombre, String email, String contraseña, Object o, Rol rol, LocalDate now) {
+        this.id = i;
+        this.nombre = nombre;
+        this.email = email;
+        this.contraseñaHash = contraseña;
+        this.salt = o.toString(); // Assuming 'o' is a salt value
+        this.rol = rol; // Assuming 'rol' is an enum
+        this.fechaRegistro = now.atStartOfDay().toInstant(java.time.ZoneOffset.UTC);
+
+    }
 
     public Integer getId() {
         return id;
@@ -79,11 +105,11 @@ public class Usuario {
         this.salt = salt;
     }
 
-    public String getRol() {
+    public Rol getRol() {
         return rol;
     }
 
-    public void setRol(String rol) {
+    public void setRol(Rol rol) {
         this.rol = rol;
     }
 
@@ -102,5 +128,4 @@ public class Usuario {
     public void setPedidos(Set<Pedido> pedidos) {
         this.pedidos = pedidos;
     }
-
 }

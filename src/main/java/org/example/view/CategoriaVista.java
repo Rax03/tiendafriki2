@@ -72,7 +72,7 @@ public class CategoriaVista extends JFrame {
         List<Categoria> listaCategoria = categoriaDAO.obtenerTodasLasCategorias();
         for (Categoria categoria : listaCategoria) {
             modeloTabla.addRow(new Object[]{
-                    categoria.getIdCategoria(),
+                    categoria.getId(),
                     categoria.getNombre()
             });
         }

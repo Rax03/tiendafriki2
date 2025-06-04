@@ -1,4 +1,4 @@
-package org.example.model.entidades;
+package org.example.model.entity;
 
 import jakarta.persistence.*;
 
@@ -7,10 +7,10 @@ import java.util.Set;
 
 @Entity
 @Table(name = "proveedores", schema = "tiendafriki")
-public class Proveedore {
+public class Proveedor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(name = "id_proveedor", nullable = false)
     private Integer id;
 
     @Column(name = "nombre", nullable = false, length = 100)
@@ -25,8 +25,17 @@ public class Proveedore {
     @Column(name = "email", length = 100)
     private String email;
 
-    @ManyToMany
-    private Set<Producto> productos = new LinkedHashSet<>();
+    @OneToMany(mappedBy = "idProveedor")
+    private Set<ProductoProveedor> productoProveedors = new LinkedHashSet<>();
+
+    public Proveedor(int i, String text, String text1, String text2, String text3) {
+
+        this.id = i;
+        this.nombre = text;
+        this.direccion = text1;
+        this.telefono = text2;
+        this.email = text3;
+    }
 
     public Integer getId() {
         return id;
@@ -64,16 +73,27 @@ public class Proveedore {
         return email;
     }
 
+    public Proveedor(Integer id, String nombre, String direccion, String telefono, String email, Set<ProductoProveedor> productoProveedors) {
+        this.id = id;
+        this.nombre = nombre;
+        this.direccion = direccion;
+        this.telefono = telefono;
+        this.email = email;
+        this.productoProveedors = productoProveedors;
+    }
+
+    public Proveedor() {
+    }
+
     public void setEmail(String email) {
         this.email = email;
     }
 
-    public Set<Producto> getProductos() {
-        return productos;
+    public Set<ProductoProveedor> getProductoProveedors() {
+        return productoProveedors;
     }
 
-    public void setProductos(Set<Producto> productos) {
-        this.productos = productos;
+    public void setProductoProveedors(Set<ProductoProveedor> productoProveedors) {
+        this.productoProveedors = productoProveedors;
     }
-
 }

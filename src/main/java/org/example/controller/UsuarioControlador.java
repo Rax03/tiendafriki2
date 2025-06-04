@@ -1,7 +1,7 @@
 package org.example.controller;
 
 import org.example.model.dao.PedidoDAO;
-import org.example.model.dao.ProductosDAO;
+import org.example.model.dao.ProductoDAO;
 import org.example.model.entity.Pedido;
 import org.example.model.entity.Producto;
 import org.example.view.UsuarioVista;
@@ -9,6 +9,7 @@ import org.example.view.UsuarioVista;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,7 +19,7 @@ import java.util.Map;
 public class UsuarioControlador {
     private final UsuarioVista vista;
     private final PedidoDAO pedidoDAO;
-    private final ProductosDAO productoDAO;
+    private final ProductoDAO productoDAO;
     private final int idUsuario;
     private final List<Producto> carrito;
     private final Map<Integer, Integer> cantidadesSeleccionadas; // ✅ Almacena cantidades por producto
@@ -27,7 +28,7 @@ public class UsuarioControlador {
     public UsuarioControlador(UsuarioVista vista, int idUsuario) {
         this.vista = vista;
         this.pedidoDAO = new PedidoDAO();
-        this.productoDAO = new ProductosDAO();
+        this.productoDAO = new ProductoDAO();
         this.idUsuario = idUsuario;
         this.carrito = new ArrayList<>();
         this.cantidadesSeleccionadas = new HashMap<>(); // ✅ Inicializar mapa
@@ -97,7 +98,7 @@ public class UsuarioControlador {
         carrito.add(productoSeleccionado);
 
         // ✅ Guardamos la cantidad en el mapa de cantidades
-        cantidadesSeleccionadas.put(productoSeleccionado.getId_producto(), cantidad);
+        cantidadesSeleccionadas.put(productoSeleccionado.getId(), cantidad);
 
         JOptionPane.showMessageDialog(vista, "✅ Producto agregado al carrito: " + productoSeleccionado.getNombre() + " x " + cantidad);
         mostrarCarrito();
@@ -119,7 +120,7 @@ public class UsuarioControlador {
     private void mostrarCarrito() {
         StringBuilder texto = new StringBuilder();
         for (Producto p : carrito) {
-            int cantidadSeleccionada = cantidadesSeleccionadas.getOrDefault(p.getId_producto(), 1); // ✅ Obtener cantidad del mapa
+            int cantidadSeleccionada = cantidadesSeleccionadas.getOrDefault(p.getId(), 1); // ✅ Obtener cantidad del mapa
             texto.append(cantidadSeleccionada)
                     .append(" x ")
                     .append(p.getNombre())
@@ -138,14 +139,14 @@ public class UsuarioControlador {
 
         float total = 0;
         for (Producto p : carrito) {
-            total += p.getPrecio() * cantidadesSeleccionadas.getOrDefault(p.getId_producto(), 1); // ✅ Usar cantidad correcta
+            total += p.getPrecio() * cantidadesSeleccionadas.getOrDefault(p.getId(), 1); // ✅ Usar cantidad correcta
         }
 
         Pedido pedido = new Pedido();
         pedido.setEstado("Pendiente");
         pedido.setFechaPedido(LocalDateTime.now());
-        pedido.setTotal(total);
-        pedido.setIdCliente(idUsuario);
+        pedido.setTotal(BigDecimal.valueOf(total));
+        pedido.setId(idUsuario);
 
         int idPedido = pedidoDAO.registrarPedido(pedido, idUsuario, carrito, cantidadesSeleccionadas); // ✅ Ahora enviamos el mapa
 

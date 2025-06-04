@@ -23,7 +23,7 @@ public class UsuarioService {
                 return null;
             }
 
-            boolean passwordValida = HashUtil.verificarPassword(password, usuario.getSalt(), usuario.getPassword());
+            boolean passwordValida = HashUtil.verificarPassword(password, usuario.getSalt(), usuario.getContraseñaHash());
             if (passwordValida) {
                 logger.info("✅ Usuario autenticado correctamente: " + email);
                 return usuario;
@@ -46,9 +46,9 @@ public class UsuarioService {
 
             // Generar salt y hashear la contraseña usando HashUtil
             String salt = HashUtil.generarSalt();
-            String hashedPassword = HashUtil.hashearConSalt(usuario.getPassword(), salt);
+            String hashedPassword = HashUtil.hashearConSalt(usuario.getContraseñaHash(), salt);
             usuario.setSalt(salt);
-            usuario.setPassword(hashedPassword);
+            usuario.setContraseñaHash(hashedPassword);
 
             boolean registrado = usuarioDAO.registrarUsuario(usuario);
             if (registrado) {

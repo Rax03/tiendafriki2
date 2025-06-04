@@ -87,7 +87,7 @@ public class UsuariosVista extends JFrame {
                         usuario.getId(),
                         usuario.getNombre(),
                         usuario.getEmail(),
-                        usuario.getRol().name(),
+                        usuario.getRol(),
                         usuario.getFechaRegistro()
                 });
             }
@@ -197,7 +197,7 @@ public class UsuariosVista extends JFrame {
                 usuarioExistente.setEmail(txtEmail.getText());
                 String nuevaContraseña = new String(txtContraseña.getPassword());
                 if (!nuevaContraseña.isEmpty()) {
-                    usuarioExistente.setPassword(nuevaContraseña); // Actualizar solo si se ingresó algo
+                    usuarioExistente.setContraseñaHash(nuevaContraseña); // Actualizar solo si se ingresó algo
                 }
                 usuarioExistente.setRol((Rol) cmbRol.getSelectedItem());
 

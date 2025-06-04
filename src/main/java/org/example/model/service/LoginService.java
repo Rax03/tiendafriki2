@@ -14,7 +14,7 @@ public class LoginService {
      * Método para autenticar un usuario según su correo y contraseña.
      * @param email Correo del usuario.
      * @param contraseña Contraseña del usuario.
-     * @return Usuario autenticado o null si la autenticación falla.
+     * @return Usuario autenticado persistence.xml null si la autenticación falla.
      */
     public Usuario autenticarUsuario(String email, String contraseña) {
         // Se podría agregar validación extra si es necesario antes de delegar

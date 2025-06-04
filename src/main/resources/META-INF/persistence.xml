@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence" version="3.0">
+    <persistence-unit name="tiendafriki" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+        <class>org.example.model.entity.Producto</class>
+        <class>org.example.model.entity.Categoria</class>
+        <class>org.example.model.entity.Pedido</class>
+        <class>org.example.model.entity.Usuario</class>
+        <class>org.example.model.entity.ProductoProveedor</class>
+        <class>org.example.model.entity.Proveedor</class>
+        <class>org.example.model.entity.DetallesPedido</class>
+        <class>org.example.model.entity.ProductoProveedorId</class>
+
+        <properties>
+            <property name="jakarta.persistence.jdbc.driver" value="org.mariadb.jdbc.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:mariadb://localhost:3306/tiendafriki"/>
+            <property name="jakarta.persistence.jdbc.user" value="root"/>
+            <property name="jakarta.persistence.jdbc.password" value="root"/>
+
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MariaDBDialect"/>
+            <property name="jakarta.persistence.schema-generation.database.action" value="update"/>
+
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.use_sql_comments" value="true"/>
+
+            <!-- Forzada la estrategia de nombres para respetar los nombres definidos en las anotaciones -->
+            <property name="hibernate.implicit_naming_strategy" value="org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl"/>
+            <property name="hibernate.physical_naming_strategy" value="org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl"/>
+        </properties>
+    </persistence-unit>
+</persistence>

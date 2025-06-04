@@ -1,4 +1,4 @@
-package org.example.model.entidades;
+package org.example.model.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -8,7 +8,7 @@ import java.util.Objects;
 
 @Embeddable
 public class ProductoProveedorId implements java.io.Serializable {
-    private static final long serialVersionUID = -5393031152086949669L;
+    private static final long serialVersionUID = -6274803036005636865L;
     @Column(name = "id_producto", nullable = false)
     private Integer idProducto;
 

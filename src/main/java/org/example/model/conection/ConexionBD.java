@@ -23,35 +23,36 @@ public class ConexionBD {
             String url = config.getProperty("db.url");
             String user = config.getProperty("db.user");
             String password = config.getProperty("db.password");
-            String driver = config.getProperty("db.driver");
+
+            String driver = "org.mariadb.jdbc.Driver";
 
             Class.forName(driver);
             conexion = DriverManager.getConnection(url, user, password);
-
+            System.out.println("✅ Conexión establecida con éxito a la base de datos.");
         } catch (IOException | ClassNotFoundException | SQLException e) {
-            System.err.println("Error al conectar con la base de datos: " + e.getMessage());
+            System.err.println("❌ Error al conectar con la base de datos: " + e.getMessage());
         }
     }
 
     public static Connection conectar() {
         try {
-            if (conexion == null || conexion.isClosed()) { // ✅ Verifica si la conexión fue cerrada
+            if (conexion == null || conexion.isClosed()) {
                 cargarConfiguracion();
             }
         } catch (SQLException e) {
-            System.err.println("Error verificando conexión: " + e.getMessage());
+            System.err.println("❌ Error verificando conexión: " + e.getMessage());
         }
         return conexion;
     }
 
-
     public static void cerrarConexion() {
         try {
-            if (conexion != null) {
+            if (conexion != null && !conexion.isClosed()) {
                 conexion.close();
+                System.out.println("✅ Conexión cerrada correctamente.");
             }
         } catch (SQLException e) {
-            System.err.println("Error al cerrar conexión: " + e.getMessage());
+            System.err.println("❌ Error al cerrar conexión: " + e.getMessage());
         }
     }
 }

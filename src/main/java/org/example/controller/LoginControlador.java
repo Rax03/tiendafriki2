@@ -56,7 +56,7 @@ public class LoginControlador {
             }
 
         } else {
-            JOptionPane.showMessageDialog(vista, "Correo o contraseña incorrectos.");
+            JOptionPane.showMessageDialog(vista, "Correo persistence.xml contraseña incorrectos.");
         }
     }
 

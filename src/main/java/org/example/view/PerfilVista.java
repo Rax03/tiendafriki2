@@ -33,7 +33,7 @@ public class PerfilVista extends JFrame {
         formulario.add(txtEmail);
 
         formulario.add(new JLabel("Contraseña:"));
-        txtContraseña = new JPasswordField(usuario.getPassword()); // Cargar la contraseña desde el objeto usuario (aunque idealmente debe estar encriptada)
+        txtContraseña = new JPasswordField(usuario.getContraseñaHash()); // Cargar la contraseña desde el objeto usuario (aunque idealmente debe estar encriptada)
         formulario.add(txtContraseña);
 
         add(formulario, BorderLayout.CENTER);
@@ -50,7 +50,7 @@ public class PerfilVista extends JFrame {
         // Actualizar el objeto Usuario con los datos del formulario
         usuario.setNombre(txtNombre.getText());
         usuario.setEmail(txtEmail.getText());
-        usuario.setPassword(new String(txtContraseña.getPassword()));
+        usuario.setContraseñaHash(new String(txtContraseña.getPassword()));
 
 
          UsuarioDAO usuarioDAO = new UsuarioDAO();

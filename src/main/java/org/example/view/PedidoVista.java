@@ -6,7 +6,9 @@ import org.example.model.entity.Pedido;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -77,13 +79,15 @@ public class PedidoVista extends JFrame {
         List<Pedido> pedidos = pedidoDAO.obtenerTodosLosPedidos();
 
         for (Pedido pedido : pedidos) {
-            String nombreCliente = pedidoDAO.obtenerNombreClientePorId(pedido.getIdCliente());
-            String productos = pedidoDAO.obtenerProductosPorPedido(pedido.getIdPedido());
+            String nombreCliente = pedidoDAO.obtenerNombreClientePorId(pedido.getId());
+            String productos = pedidoDAO.obtenerProductosPorPedido(pedido.getId());
 
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    .withZone(ZoneId.systemDefault());
             modeloTabla.addRow(new Object[]{
-                    pedido.getIdPedido(),
+                    pedido.getId(),
                     (nombreCliente != null) ? nombreCliente : "Cliente desconocido",
-                    pedido.getFechaPedido().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                    formatter.format(pedido.getFechaPedido()),
                     pedido.getEstado(),
                     pedido.getTotal(),
                     (productos != null) ? productos : "Sin productos",
@@ -146,7 +150,7 @@ public class PedidoVista extends JFrame {
             return;
         }
 
-        JTextField txtIdCliente = new JTextField(String.valueOf(pedidoExistente.getIdCliente()));
+        JTextField txtIdCliente = new JTextField(String.valueOf(pedidoExistente.getId()));
         JTextField txtTotal = new JTextField(String.valueOf(pedidoExistente.getTotal()));
         JComboBox<String> cmbEstado = new JComboBox<>(new String[]{"Pendiente", "Enviado", "Entregado", "Cancelado"});
         cmbEstado.setSelectedItem(pedidoExistente.getEstado());
@@ -164,8 +168,8 @@ public class PedidoVista extends JFrame {
         int opcion = JOptionPane.showConfirmDialog(this, panelFormulario, "Editar Pedido", JOptionPane.OK_CANCEL_OPTION);
         if (opcion == JOptionPane.OK_OPTION) {
             try {
-                pedidoExistente.setIdCliente(Integer.parseInt(txtIdCliente.getText()));
-                pedidoExistente.setTotal(Float.parseFloat(txtTotal.getText()));
+                pedidoExistente.setId(Integer.parseInt(txtIdCliente.getText()));
+                pedidoExistente.setTotal(BigDecimal.valueOf(Float.parseFloat(txtTotal.getText())));
                 pedidoExistente.setEstado(cmbEstado.getSelectedItem().toString());
 
                 if (pedidoDAO.actualizarPedido(pedidoExistente)) {
