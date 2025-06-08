@@ -6,6 +6,7 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -59,10 +60,9 @@ public class Usuario {
         this.nombre = nombre;
         this.email = email;
         this.contraseñaHash = contraseña;
-        this.salt = o.toString(); // Assuming 'o' is a salt value
-        this.rol = rol; // Assuming 'rol' is an enum
-        this.fechaRegistro = now.atStartOfDay().toInstant(java.time.ZoneOffset.UTC);
-
+        this.salt = (o != null) ? o.toString() : ""; // ✅ Se evita el NullPointerException
+        this.rol = rol;
+        this.fechaRegistro = now.atStartOfDay().toInstant(java.time.ZoneOffset.UTC); // ✅ Conversión correcta
     }
 
     public Integer getId() {
@@ -127,5 +127,19 @@ public class Usuario {
 
     public void setPedidos(Set<Pedido> pedidos) {
         this.pedidos = pedidos;
+    }
+
+    @Override
+    public String toString() {
+        return "Usuario{" +
+                "id=" + id +
+                ", nombre='" + nombre + '\'' +
+                ", email='" + email + '\'' +
+                ", contraseñaHash='" + contraseñaHash + '\'' +
+                ", salt='" + salt + '\'' +
+                ", rol=" + rol +
+                ", fechaRegistro=" + fechaRegistro +
+                ", pedidos=" + pedidos +
+                '}';
     }
 }

@@ -1,14 +1,15 @@
 package org.example.view;
 
 import org.example.model.dao.PedidoDAO;
+import org.example.model.dao.UsuarioDAO;
 import org.example.model.entity.Pedido;
+import org.example.model.entity.Usuario;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class PedidoVista extends JFrame {
     private JTable tablaPedidos;
     private DefaultTableModel modeloTabla;
     private PedidoDAO pedidoDAO;
+    private UsuarioDAO usuarioDAO;
 
     public PedidoVista() {
         setTitle("Gestión de Pedidos - Tienda Friki");
@@ -25,6 +27,7 @@ public class PedidoVista extends JFrame {
         setLocationRelativeTo(null);
 
         pedidoDAO = new PedidoDAO();
+        usuarioDAO = new UsuarioDAO(); // Inicialización del DAO de Usuario
 
         // Panel principal
         JPanel panelPrincipal = new JPanel(new BorderLayout());
@@ -78,32 +81,31 @@ public class PedidoVista extends JFrame {
         modeloTabla.setRowCount(0);
         List<Pedido> pedidos = pedidoDAO.obtenerTodosLosPedidos();
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         for (Pedido pedido : pedidos) {
             String nombreCliente = pedidoDAO.obtenerNombreClientePorId(pedido.getId());
             String productos = pedidoDAO.obtenerProductosPorPedido(pedido.getId());
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                    .withZone(ZoneId.systemDefault());
             modeloTabla.addRow(new Object[]{
                     pedido.getId(),
                     (nombreCliente != null) ? nombreCliente : "Cliente desconocido",
-                    formatter.format(pedido.getFechaPedido()),
+                    pedido.getFechaPedido().format(formatter),
                     pedido.getEstado(),
                     pedido.getTotal(),
-                    (productos != null) ? productos : "Sin productos",
+                    (productos != null) ? productos : "Sin productos"
             });
         }
     }
 
     private void mostrarFormularioAgregar() {
-        JTextField txtIdCliente = new JTextField();
+        // Solicitamos el ID del usuario, el total y seleccionamos el estado
+        JTextField txtIdUsuario = new JTextField();
         JTextField txtTotal = new JTextField();
         JComboBox<String> cmbEstado = new JComboBox<>(new String[]{"Pendiente", "Enviado", "Entregado", "Cancelado"});
         LocalDateTime fechaPedido = LocalDateTime.now();
 
         JPanel panelFormulario = new JPanel(new GridLayout(4, 2, 10, 10));
-        panelFormulario.add(new JLabel("ID Cliente:"));
-        panelFormulario.add(txtIdCliente);
+        panelFormulario.add(new JLabel("ID Usuario:"));
+        panelFormulario.add(txtIdUsuario);
         panelFormulario.add(new JLabel("Total:"));
         panelFormulario.add(txtTotal);
         panelFormulario.add(new JLabel("Estado:"));
@@ -114,12 +116,28 @@ public class PedidoVista extends JFrame {
         int opcion = JOptionPane.showConfirmDialog(this, panelFormulario, "Agregar Pedido", JOptionPane.OK_CANCEL_OPTION);
         if (opcion == JOptionPane.OK_OPTION) {
             try {
+                // Pedir dirección de envío
+                String direccionEnvio = JOptionPane.showInputDialog("Ingrese su dirección de envío:");
+                if (direccionEnvio == null || direccionEnvio.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Debe ingresar una dirección válida.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Obtener el usuario desde la base de datos
+                int idUsuario = Integer.parseInt(txtIdUsuario.getText().trim());
+                Usuario usuario = usuarioDAO.obtenerUsuarioPorId(idUsuario);
+                if (usuario == null) {
+                    JOptionPane.showMessageDialog(this, "❌ Error: Usuario no encontrado.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Crear el pedido con la dirección y usuario asignados
                 Pedido pedido = new Pedido(
-                        0,
-                        Integer.parseInt(txtIdCliente.getText()),
-                        fechaPedido,
                         cmbEstado.getSelectedItem().toString(),
-                        Float.parseFloat(txtTotal.getText())
+                        fechaPedido,
+                        new BigDecimal(txtTotal.getText().trim()),
+                        direccionEnvio,
+                        usuario
                 );
 
                 if (pedidoDAO.insertarPedido(pedido)) {
@@ -134,7 +152,6 @@ public class PedidoVista extends JFrame {
         }
     }
 
-
     private void mostrarFormularioEditar() {
         int filaSeleccionada = tablaPedidos.getSelectedRow();
         if (filaSeleccionada < 0) {
@@ -144,34 +161,34 @@ public class PedidoVista extends JFrame {
 
         int idPedido = (int) modeloTabla.getValueAt(filaSeleccionada, 0);
         Pedido pedidoExistente = pedidoDAO.obtenerPedidoPorId(idPedido);
-
         if (pedidoExistente == null) {
             JOptionPane.showMessageDialog(this, "Error al obtener los datos del pedido.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
-        JTextField txtIdCliente = new JTextField(String.valueOf(pedidoExistente.getId()));
-        JTextField txtTotal = new JTextField(String.valueOf(pedidoExistente.getTotal()));
+        // En la edición, solo permitimos cambiar el total y el estado.
+        JTextField txtTotal = new JTextField(pedidoExistente.getTotal().toString());
         JComboBox<String> cmbEstado = new JComboBox<>(new String[]{"Pendiente", "Enviado", "Entregado", "Cancelado"});
         cmbEstado.setSelectedItem(pedidoExistente.getEstado());
 
-        JPanel panelFormulario = new JPanel(new GridLayout(4, 2, 10, 10));
-        panelFormulario.add(new JLabel("ID Cliente:"));
-        panelFormulario.add(txtIdCliente);
+        // Mostramos información no editable: ID Pedido, Cliente y Fecha Pedido.
+        JPanel panelFormulario = new JPanel(new GridLayout(5, 2, 10, 10));
+        panelFormulario.add(new JLabel("ID Pedido:"));
+        panelFormulario.add(new JLabel(String.valueOf(pedidoExistente.getId())));
+        panelFormulario.add(new JLabel("Cliente:"));
+        panelFormulario.add(new JLabel(pedidoDAO.obtenerNombreClientePorId(pedidoExistente.getId())));
         panelFormulario.add(new JLabel("Total:"));
         panelFormulario.add(txtTotal);
         panelFormulario.add(new JLabel("Estado:"));
         panelFormulario.add(cmbEstado);
-        panelFormulario.add(new JLabel("Fecha Pedido (no editable):"));
+        panelFormulario.add(new JLabel("Fecha Pedido:"));
         panelFormulario.add(new JLabel(pedidoExistente.getFechaPedido().toString()));
 
         int opcion = JOptionPane.showConfirmDialog(this, panelFormulario, "Editar Pedido", JOptionPane.OK_CANCEL_OPTION);
         if (opcion == JOptionPane.OK_OPTION) {
             try {
-                pedidoExistente.setId(Integer.parseInt(txtIdCliente.getText()));
-                pedidoExistente.setTotal(BigDecimal.valueOf(Float.parseFloat(txtTotal.getText())));
+                // Actualizar solo los campos editables: Total y Estado
+                pedidoExistente.setTotal(new BigDecimal(txtTotal.getText().trim()));
                 pedidoExistente.setEstado(cmbEstado.getSelectedItem().toString());
-
                 if (pedidoDAO.actualizarPedido(pedidoExistente)) {
                     JOptionPane.showMessageDialog(this, "Pedido actualizado exitosamente.");
                     llenarTablaPedidos();

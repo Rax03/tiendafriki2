@@ -23,9 +23,8 @@ public class Categoria {
     @OneToMany(mappedBy = "idCategoria", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Producto> productos = new LinkedHashSet<>();
 
-    // Constructor por defecto (requerido por JPA)
-    public Categoria() {
-    }
+    // Constructor por defecto requerido por JPA
+    public Categoria() {}
 
     public Categoria(Integer id, String nombre, String descripcion, Set<Producto> productos) {
         this.id = id;
@@ -34,12 +33,10 @@ public class Categoria {
         this.productos = productos;
     }
 
-    public Categoria(int i, String text) {
-
-        this.id = i;
-        this.nombre = text;
+    public Categoria(Integer id, String nombre) {
+        this.id = id;
+        this.nombre = nombre;
         this.descripcion = "";
-        this.productos = new LinkedHashSet<>();
     }
 
     // Getters y setters
@@ -75,21 +72,23 @@ public class Categoria {
         this.productos = productos;
     }
 
-
-
+    // Para que el JComboBox funcione correctamente al seleccionar el objeto
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Categoria)) return false;
+        Categoria that = (Categoria) o;
+        return Objects.equals(id, that.id);
+    }
 
     @Override
     public int hashCode() {
         return Objects.hash(id);
     }
 
-    // toString para ayudar en el debugging
+    // Para mostrar el nombre en JComboBox
     @Override
     public String toString() {
-        return "Categoria{" +
-                "id=" + id +
-                ", nombre='" + nombre + '\'' +
-                ", descripcion='" + descripcion + '\'' +
-                '}';
+        return nombre;
     }
 }

@@ -5,6 +5,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "producto_proveedor", schema = "tiendafriki")
@@ -23,8 +24,8 @@ public class ProductoProveedor {
     @JoinColumn(name = "id_proveedor", nullable = false)
     private Proveedor idProveedor;
 
-    @Column(name = "fecha", nullable = false)
-    private Instant fecha;
+    @Column(name = "fecha", nullable = false, insertable = false, updatable = false)
+    private LocalDateTime fecha;
 
     @Column(name = "precio", nullable = false)
     private Double precio;
@@ -59,11 +60,11 @@ public class ProductoProveedor {
         this.idProveedor = idProveedor;
     }
 
-    public Instant getFecha() {
+    public LocalDateTime getFecha() {
         return fecha;
     }
 
-    public void setFecha(Instant fecha) {
+    public void setFecha(LocalDateTime fecha) {
         this.fecha = fecha;
     }
 

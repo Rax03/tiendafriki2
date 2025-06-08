@@ -1,9 +1,10 @@
 package org.example.model.dao;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
+import jakarta.persistence.TypedQuery;
+import org.example.model.conection.ConexionBD;
 import org.example.model.entity.Usuario;
+
 
 import java.util.List;
 import java.util.logging.Level;
@@ -12,40 +13,44 @@ import java.util.logging.Logger;
 public class UsuarioDAO {
 
     private static final Logger logger = Logger.getLogger(UsuarioDAO.class.getName());
-    private EntityManagerFactory emf = Persistence.createEntityManagerFactory("tiendafriki");
 
     public List<Usuario> obtenerTodosLosUsuarios() {
-        EntityManager em = emf.createEntityManager();
-        List<Usuario> usuarios = em.createQuery("SELECT u FROM Usuario u", Usuario.class).getResultList();
-        em.close();
-        return usuarios;
-    }
-
-    public Usuario buscarPorEmail(String email) {
-        EntityManager em = emf.createEntityManager();
-        Usuario usuario = null;
+        EntityManager em = ConexionBD.getEntityManager();
         try {
-            usuario = em.createQuery("SELECT u FROM Usuario u WHERE u.email = :email", Usuario.class)
-                    .setParameter("email", email)
-                    .getSingleResult();
+            TypedQuery<Usuario> query = em.createQuery("SELECT u FROM Usuario u", Usuario.class);
+            return query.getResultList();
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Usuario no encontrado: " + email);
+            logger.log(Level.SEVERE, "Error al obtener todos los usuarios", e);
+            return null;
         } finally {
             em.close();
         }
-        return usuario;
+    }
+
+    public Usuario buscarPorEmail(String email) {
+        EntityManager em = ConexionBD.getEntityManager();
+        try {
+            TypedQuery<Usuario> query = em.createQuery("SELECT u FROM Usuario u WHERE u.email = :email", Usuario.class);
+            query.setParameter("email", email);
+            return query.getResultStream().findFirst().orElse(null);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error al buscar usuario por email", e);
+            return null;
+        } finally {
+            em.close();
+        }
     }
 
     public boolean registrarUsuario(Usuario usuario) {
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = ConexionBD.getEntityManager();
         try {
             em.getTransaction().begin();
-            em.persist(usuario);
+            em.merge(usuario);  // persistir nuevo usuario
             em.getTransaction().commit();
             return true;
         } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
             logger.log(Level.SEVERE, "Error al registrar usuario", e);
-            em.getTransaction().rollback();
             return false;
         } finally {
             em.close();
@@ -53,60 +58,95 @@ public class UsuarioDAO {
     }
 
     public boolean correoExiste(String email) {
-        return buscarPorEmail(email) != null;
-    }
-
-    public boolean eliminarUsuario(int idUsuario) {
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = ConexionBD.getEntityManager();
         try {
-            Usuario usuario = em.find(Usuario.class, idUsuario);
-            if (usuario != null) {
-                em.getTransaction().begin();
-                em.remove(usuario);
-                em.getTransaction().commit();
-                return true;
-            }
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(u) FROM Usuario u WHERE u.email = :email", Long.class);
+            query.setParameter("email", email);
+            Long count = query.getSingleResult();
+            return count > 0;
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error al eliminar usuario", e);
-        } finally {
-            em.close();
-        }
-        return false;
-    }
-
-    public boolean actualizarUsuario(Usuario usuario) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            em.getTransaction().begin();
-            em.merge(usuario);
-            em.getTransaction().commit();
-            return true;
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error al actualizar usuario", e);
-            em.getTransaction().rollback();
+            logger.log(Level.SEVERE, "Error al verificar si el correo existe", e);
             return false;
         } finally {
             em.close();
         }
     }
 
-    public String obtenerRolPorEmail(String email) {
-        Usuario usuario = buscarPorEmail(email);
-        return (usuario != null) ? usuario.getRol().name() : null;
-    }
-
-
-    public Usuario obtenerDatosUsuario(int idUsuario) {
-
-        EntityManager em = emf.createEntityManager();
-        Usuario usuario = null;
+    public boolean eliminarUsuario(int idUsuario) {
+        EntityManager em = ConexionBD.getEntityManager();
         try {
-            usuario = em.find(Usuario.class, idUsuario);
+            em.getTransaction().begin();
+            Usuario usuario = em.find(Usuario.class, idUsuario);
+            if (usuario != null) {
+                em.remove(usuario);
+                em.getTransaction().commit();
+                return true;
+            } else {
+                em.getTransaction().rollback();
+                return false;
+            }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error al obtener datos del usuario", e);
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            logger.log(Level.SEVERE, "Error al eliminar el usuario", e);
+            return false;
         } finally {
             em.close();
         }
-        return usuario;
+    }
+
+    public boolean actualizarUsuario(Usuario usuario) {
+        EntityManager em = ConexionBD.getEntityManager();
+        try {
+            em.getTransaction().begin();
+            em.merge(usuario);  // merge para actualizar entidad existente
+            em.getTransaction().commit();
+            return true;
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            logger.log(Level.SEVERE, "Error al actualizar el usuario", e);
+            return false;
+        } finally {
+            em.close();
+        }
+    }
+
+    public Usuario obtenerDatosUsuario(int idUsuario) {
+        EntityManager em = ConexionBD.getEntityManager();
+        try {
+            return em.find(Usuario.class, idUsuario);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error al obtener datos del usuario", e);
+            return null;
+        } finally {
+            em.close();
+        }
+    }
+
+    public String obtenerRolPorEmail(String email) {
+        EntityManager em = ConexionBD.getEntityManager();
+        try {
+            TypedQuery<String> query = em.createQuery(
+                    "SELECT u.rol FROM Usuario u WHERE u.email = :email", String.class);
+            query.setParameter("email", email);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error al obtener el rol del usuario por email", e);
+            return null;
+        } finally {
+            em.close();
+        }
+    }
+
+    public Usuario obtenerUsuarioPorId(int idUsuario) {
+        EntityManager em = ConexionBD.getEntityManager();
+        try {
+            return em.find(Usuario.class, idUsuario);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error al obtener usuario por ID", e);
+            return null;
+        } finally {
+            em.close();
+        }
     }
 }

@@ -1,68 +1,55 @@
 package org.example.model.entity;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.Generated;
+import org.hibernate.annotations.GenerationTime;
 
-import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "productos", schema = "tiendafriki")
 public class Producto {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_producto", nullable = false)
+    @Column(name = "id_producto")
     private Integer id;
 
-    @Column(name = "nombre", nullable = false, length = 100)
+    @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Lob
-    @Column(name = "descripcion")
-    private String descripcion;
+    @Column(name = "precio", nullable = false)
+    private BigDecimal precio;
 
-    @Column(name = "precio")
-    private Float precio;
-
-    @ColumnDefault("0")
     @Column(name = "stock", nullable = false)
     private Integer stock;
 
     @Column(name = "imagen")
     private String imagen;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "id_categoria", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_categoria")
     private Categoria idCategoria;
 
-    @Column(name = "fecha", nullable = false)
-    private Instant fecha;
+    @Column(name = "fecha", insertable = false, updatable = false)
+    @Generated(GenerationTime.INSERT)  // Hibernate reconoce que es generado en BD al insertar
+    private LocalDateTime fecha;
 
-    @OneToMany(mappedBy = "idProducto")
-    private Set<DetallesPedido> detallesPedidos = new LinkedHashSet<>();
+    public Producto(String nombre, BigDecimal precio, int stock, String s1, Categoria categoriaPersistente) {
 
-    @OneToMany(mappedBy = "idProducto")
-    private Set<ProductoProveedor> productoProveedors = new LinkedHashSet<>();
-
-    public Producto(Integer id, String nombre, String descripcion, Float precio, Integer stock, String imagen, Categoria idCategoria, Instant fecha, Set<DetallesPedido> detallesPedidos, Set<ProductoProveedor> productoProveedors) {
-        this.id = id;
         this.nombre = nombre;
-        this.descripcion = descripcion;
         this.precio = precio;
         this.stock = stock;
-        this.imagen = imagen;
-        this.idCategoria = idCategoria;
-        this.fecha = fecha;
-        this.detallesPedidos = detallesPedidos;
-        this.productoProveedors = productoProveedors;
+        this.imagen = s1;
+        this.idCategoria = categoriaPersistente;
     }
 
     public Producto() {
+
     }
+
+    // Getters y setters
 
     public Integer getId() {
         return id;
@@ -80,19 +67,11 @@ public class Producto {
         this.nombre = nombre;
     }
 
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public Float getPrecio() {
+    public BigDecimal getPrecio() {
         return precio;
     }
 
-    public void setPrecio(Float precio) {
+    public void setPrecio(BigDecimal precio) {
         this.precio = precio;
     }
 
@@ -120,28 +99,9 @@ public class Producto {
         this.idCategoria = idCategoria;
     }
 
-    public Instant getFecha() {
+    public LocalDateTime getFecha() {
         return fecha;
     }
 
-    public void setFecha(Instant fecha) {
-        this.fecha = fecha;
-    }
-
-    public Set<DetallesPedido> getDetallesPedidos() {
-        return detallesPedidos;
-    }
-
-    public void setDetallesPedidos(Set<DetallesPedido> detallesPedidos) {
-        this.detallesPedidos = detallesPedidos;
-    }
-
-    public Set<ProductoProveedor> getProductoProveedors() {
-        return productoProveedors;
-    }
-
-    public void setProductoProveedors(Set<ProductoProveedor> productoProveedors) {
-        this.productoProveedors = productoProveedors;
-    }
-
+    // No setter para fecha si quieres que solo la base de datos la maneje
 }

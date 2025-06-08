@@ -32,7 +32,7 @@ public class CategoriaDAO {
         EntityTransaction transaction = em.getTransaction();
         try {
             transaction.begin();
-            em.persist(categoria);
+            em.merge(categoria);
             transaction.commit();
             return true;
         } catch (Exception e) {

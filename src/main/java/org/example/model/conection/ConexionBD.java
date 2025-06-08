@@ -1,58 +1,32 @@
 package org.example.model.conection;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Properties;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 
 public class ConexionBD {
 
-    private static Connection conexion = null;
+    private static final EntityManagerFactory emf;
 
     static {
-        cargarConfiguracion();
-    }
-
-    private static void cargarConfiguracion() {
-        try (FileInputStream fis = new FileInputStream("src/main/resources/config.properties")) {
-            Properties config = new Properties();
-            config.load(fis);
-
-            String url = config.getProperty("db.url");
-            String user = config.getProperty("db.user");
-            String password = config.getProperty("db.password");
-
-            String driver = "org.mariadb.jdbc.Driver";
-
-            Class.forName(driver);
-            conexion = DriverManager.getConnection(url, user, password);
-            System.out.println("✅ Conexión establecida con éxito a la base de datos.");
-        } catch (IOException | ClassNotFoundException | SQLException e) {
-            System.err.println("❌ Error al conectar con la base de datos: " + e.getMessage());
+        try {
+            emf = Persistence.createEntityManagerFactory("tiendafriki"); // "nombrePU" debe coincidir con persistence.xml
+            System.out.println("✅ EntityManagerFactory inicializado con éxito.");
+        } catch (Throwable ex) {
+            System.err.println("❌ Error al inicializar EntityManagerFactory: " + ex.getMessage());
+            throw new ExceptionInInitializerError(ex);
         }
     }
 
-    public static Connection conectar() {
-        try {
-            if (conexion == null || conexion.isClosed()) {
-                cargarConfiguracion();
-            }
-        } catch (SQLException e) {
-            System.err.println("❌ Error verificando conexión: " + e.getMessage());
-        }
-        return conexion;
+    public static EntityManager getEntityManager() {
+        return emf.createEntityManager();
     }
 
-    public static void cerrarConexion() {
-        try {
-            if (conexion != null && !conexion.isClosed()) {
-                conexion.close();
-                System.out.println("✅ Conexión cerrada correctamente.");
-            }
-        } catch (SQLException e) {
-            System.err.println("❌ Error al cerrar conexión: " + e.getMessage());
+    public static void cerrar() {
+        if (emf != null && emf.isOpen()) {
+            emf.close();
+            System.out.println("✅ EntityManagerFactory cerrado correctamente.");
         }
     }
 }

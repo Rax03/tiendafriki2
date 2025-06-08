@@ -30,12 +30,16 @@ public class DetallesPedido {
     @JoinColumn(name = "id_producto", nullable = false, referencedColumnName = "id_producto")
     private Producto idProducto;
 
-    public DetallesPedido(Pedido pedido, Producto p, int cantidad, Float precio) {
-
+    public DetallesPedido(Pedido pedido, Producto p, int cantidad, BigDecimal precio) {
         this.idPedido = pedido;
         this.idProducto = p;
         this.cantidad = cantidad;
-        this.precio = BigDecimal.valueOf(precio);
+        this.precio = precio; // Usa directamente el BigDecimal sin conversión innecesaria
+    }
+
+
+    public DetallesPedido() {
+
     }
 
     public Integer getId() {

@@ -23,7 +23,7 @@ public class PedidoDAO {
         List<Pedido> pedidos = new ArrayList<>();
         try {
             // Se usa JOIN FETCH para cargar datos relacionados de usuario.
-            pedidos = em.createQuery("SELECT p FROM Pedido p JOIN FETCH p.usuario", Pedido.class)
+            pedidos = em.createQuery("SELECT p FROM Pedido p JOIN FETCH p.idUsuario", Pedido.class)
                     .getResultList();
             // Forzamos la carga de detalles (si están mapeados como LAZY)
             pedidos.forEach(p -> p.getDetallesPedidos().size());
@@ -41,7 +41,7 @@ public class PedidoDAO {
         List<DetallesPedido> detalles = new ArrayList<>();
         try {
             detalles = em.createQuery(
-                            "SELECT d FROM DetallesPedido d JOIN FETCH d.producto WHERE d.pedido.id = :id", DetallesPedido.class)
+                            "SELECT d FROM DetallesPedido d JOIN FETCH d.idProducto WHERE d.idPedido.id = :id", DetallesPedido.class)
                     .setParameter("id", idPedido)
                     .getResultList();
         } catch (Exception e) {
@@ -52,24 +52,25 @@ public class PedidoDAO {
         return detalles;
     }
 
-    // Registrar un pedido: se valida el usuario, se persiste el pedido, se crea cada detalle y se actualiza el stock del producto.
     public int registrarPedido(Pedido pedido, int idUsuario, List<Producto> carrito, Map<Integer, Integer> cantidadesSeleccionadas) {
         EntityManager em = emf.createEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
 
-            // Buscar el usuario
-            Usuario cliente = em.find(Usuario.class, idUsuario);
-            if (cliente == null) {
+            // Buscar el usuario y asignarlo al pedido
+            Usuario usuario = em.find(Usuario.class, idUsuario);
+            if (usuario == null) {
                 tx.rollback();
                 throw new IllegalArgumentException("❌ Usuario no encontrado.");
             }
+            pedido.setIdUsuario(usuario);
 
-            pedido.setIdCliente(cliente);
+            // ✅ Persistir primero el pedido para que tenga un ID válido
             em.persist(pedido);
+            em.flush(); // Fuerza la asignación del ID antes de continuar
 
-            // Procesar cada ítem del carrito
+            // Procesar cada ítem del carrito después de guardar el pedido
             for (Producto producto : carrito) {
                 Producto p = em.find(Producto.class, producto.getId());
                 int cantidad = cantidadesSeleccionadas.getOrDefault(p.getId(), 1);
@@ -80,11 +81,11 @@ public class PedidoDAO {
                     return -1;
                 }
 
-                // Crear y persistir el detalle del pedido
+                // ✅ Crear cada `DetallesPedido` con el `Pedido` ya persistido
                 DetallesPedido detalle = new DetallesPedido(pedido, p, cantidad, p.getPrecio());
                 em.persist(detalle);
 
-                // Actualiza el stock del producto y realiza merge para reflejar los cambios.
+                // Actualizar el stock del producto
                 p.setStock(p.getStock() - cantidad);
                 em.merge(p);
             }
@@ -102,6 +103,8 @@ public class PedidoDAO {
             em.close();
         }
     }
+
+
 
     // Actualizar un pedido existente.
     public boolean actualizarPedido(Pedido pedido) {
@@ -138,7 +141,7 @@ public class PedidoDAO {
         String productos = "";
         try {
             List<String> nombres = em.createQuery(
-                            "SELECT d.producto.nombre FROM DetallesPedido d WHERE d.pedido.id = :id", String.class)
+                            "SELECT d.idProducto.nombre FROM DetallesPedido d WHERE d.idPedido.id = :id", String.class)
                     .setParameter("id", idPedido)
                     .getResultList();
             productos = String.join(", ", nombres);

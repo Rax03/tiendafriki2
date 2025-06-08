@@ -1,208 +1,225 @@
 package org.example.view;
 
-import org.example.model.entity.Producto;
+import org.example.model.dao.ProductoDAO;
 import org.example.model.entity.Categoria;
+import org.example.model.entity.Producto;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 public class ProductoVista extends JFrame {
 
-    private JTable tablaProductos;
-    private JButton btnAgregar;
-    private JButton btnEditar;
-    private JButton btnEliminar;
+    private final ProductoDAO productoDAO = new ProductoDAO();
+    private JTable tabla;
+    private DefaultTableModel modelo;
 
     public ProductoVista() {
-        setTitle("Tiendafriki - Gestión de Productos");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(800, 600);
+        setTitle("Gestión de Productos");
+        setSize(900, 550);
         setLocationRelativeTo(null);
-        initComponents();
-    }
-
-    private void initComponents() {
-        // Crear la tabla y colocarla en un JScrollPane.
-        tablaProductos = new JTable();
-        JScrollPane scrollPane = new JScrollPane(tablaProductos);
-
-        // Panel con los botones.
-        JPanel panelBotones = new JPanel();
-        btnAgregar = new JButton("Agregar");
-        btnEditar = new JButton("Editar");
-        btnEliminar = new JButton("Eliminar");
-
-        panelBotones.add(btnAgregar);
-        panelBotones.add(btnEditar);
-        panelBotones.add(btnEliminar);
-
-        // Layout del frame.
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
-        add(scrollPane, BorderLayout.CENTER);
-        add(panelBotones, BorderLayout.SOUTH);
+
+        add(crearEncabezado(), BorderLayout.NORTH);
+        add(crearTabla(), BorderLayout.CENTER);
+        add(crearBotones(), BorderLayout.SOUTH);
+
+        actualizarTabla();
+        setVisible(true);
     }
 
-    // Método para actualizar la tabla de productos.
-    public void llenarTablaProductos(List<Producto> productos) {
-        String[] columnNames = {"ID", "Nombre", "Descripción", "Precio", "Stock", "Imagen", "Fecha", "Categoría"};
-        DefaultTableModel modelo = new DefaultTableModel(columnNames, 0);
-        for (Producto p : productos) {
-            // Se asume que la categoría tiene un getter 'getNombre()'.
-            Categoria cat = p.getIdCategoria();
-            Object[] fila = {
-                    p.getId(),
-                    p.getNombre(),
-                    p.getDescripcion(),
-                    p.getPrecio(),
-                    p.getStock(),
-                    p.getImagen(),
-                    p.getFecha(),
-                    (cat != null ? cat.getNombre() : "Sin categoría")
-            };
-            modelo.addRow(fila);
+    private JPanel crearEncabezado() {
+        JPanel panel = new JPanel();
+        JLabel titulo = new JLabel("Gestión de Productos");
+        titulo.setFont(new Font("Arial", Font.BOLD, 24));
+        panel.add(titulo);
+        return panel;
+    }
+
+    private JScrollPane crearTabla() {
+        modelo = new DefaultTableModel(new Object[]{"ID", "Nombre", "Precio", "Stock", "Categoría", "Imagen"}, 0) {
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                return columnIndex == 5 ? Icon.class : Object.class;
+            }
+        };
+        tabla = new JTable(modelo);
+        tabla.setRowHeight(60);
+        return new JScrollPane(tabla);
+    }
+
+    private JPanel crearBotones() {
+        JPanel panel = new JPanel();
+
+        JButton btnAgregar = new JButton("Agregar");
+        JButton btnEditar = new JButton("Editar");
+        JButton btnEliminar = new JButton("Eliminar");
+
+        btnAgregar.addActionListener(e -> mostrarFormulario(null));
+        btnEditar.addActionListener(e -> editarProducto());
+        btnEliminar.addActionListener(e -> eliminarProducto());
+
+        panel.add(btnAgregar);
+        panel.add(btnEditar);
+        panel.add(btnEliminar);
+
+        return panel;
+    }
+
+    private void mostrarFormulario(Producto producto) {
+        JTextField txtNombre = new JTextField(producto != null ? producto.getNombre() : "");
+        JTextField txtPrecio = new JTextField(producto != null ? String.valueOf(producto.getPrecio()) : "");
+        JTextField txtStock = new JTextField(producto != null ? String.valueOf(producto.getStock()) : "");
+
+        // Campo fecha creación editable (formato ISO_LOCAL_DATE_TIME)
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        String fechaDefault = producto != null && producto.getFecha() != null
+                ? producto.getFecha().format(formatter)
+                : LocalDateTime.now().format(formatter);
+        JTextField txtFechaCreacion = new JTextField(fechaDefault);
+
+        JComboBox<Categoria> comboCategoria = new JComboBox<>();
+        cargarCategorias(comboCategoria);
+        if (producto != null && producto.getIdCategoria() != null) {
+            comboCategoria.setSelectedItem(producto.getIdCategoria());
         }
-        tablaProductos.setModel(modelo);
-    }
 
-    // Getters para los botones.
-    public JButton getBtnAgregar() {
-        return btnAgregar;
-    }
+        JLabel lblImagen = new JLabel(producto != null && producto.getImagen() != null ? producto.getImagen() : "Sin imagen");
+        JButton btnImagen = new JButton("Seleccionar Imagen");
+        final String[] rutaImagen = {producto != null ? producto.getImagen() : null};
 
-    public JButton getBtnEditar() {
-        return btnEditar;
-    }
+        btnImagen.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser();
+            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                rutaImagen[0] = fc.getSelectedFile().getAbsolutePath();
+                lblImagen.setText(fc.getSelectedFile().getName());
+            }
+        });
 
-    public JButton getBtnEliminar() {
-        return btnEliminar;
-    }
+        JPanel form = new JPanel(new GridLayout(6, 2, 10, 10));
+        form.add(new JLabel("Nombre:"));
+        form.add(txtNombre);
+        form.add(new JLabel("Precio:"));
+        form.add(txtPrecio);
+        form.add(new JLabel("Stock:"));
+        form.add(txtStock);
+        form.add(new JLabel("Categoría:"));
+        form.add(comboCategoria);
+        form.add(new JLabel("Fecha de creación (yyyy-MM-ddTHH:mm:ss):"));
+        form.add(txtFechaCreacion);
 
-    // Retorna el producto seleccionado en la tabla.
-    // Para simplificar, se asume que el ID está en la primera columna.
-    public Producto getProductoSeleccionado() {
-        int filaSeleccionada = tablaProductos.getSelectedRow();
-        if (filaSeleccionada != -1) {
+        JPanel panelImagen = new JPanel(new BorderLayout());
+        panelImagen.add(lblImagen, BorderLayout.CENTER);
+        panelImagen.add(btnImagen, BorderLayout.EAST);
+        form.add(new JLabel("Imagen:"));
+        form.add(panelImagen);
+
+        int opcion = JOptionPane.showConfirmDialog(this, form,
+                producto == null ? "Nuevo Producto" : "Editar Producto", JOptionPane.OK_CANCEL_OPTION);
+
+        if (opcion == JOptionPane.OK_OPTION) {
             try {
-                int id = (int) tablaProductos.getValueAt(filaSeleccionada, 0);
-                Producto prod = new Producto();
-                prod.setId(id);
-                return prod;
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error al obtener el producto seleccionado: " + e.getMessage());
+                String nombre = txtNombre.getText().trim();
+                BigDecimal precio = new BigDecimal(txtPrecio.getText().trim()); // Usa BigDecimal en lugar de float
+                int stock = Integer.parseInt(txtStock.getText().trim());
+                Categoria categoria = (Categoria) comboCategoria.getSelectedItem();
+
+                if (categoria == null || categoria.getId() == null) {
+                    JOptionPane.showMessageDialog(this, "Debe seleccionar una categoría válida.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                LocalDateTime fechaCreacion;
+                try {
+                    fechaCreacion = LocalDateTime.parse(txtFechaCreacion.getText().trim(), formatter);
+                } catch (DateTimeParseException ex) {
+                    JOptionPane.showMessageDialog(this, "Fecha inválida. Usa el formato yyyy-MM-ddTHH:mm:ss", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                Categoria categoriaPersistente = productoDAO.obtenerCategoriaPorId(categoria.getId());
+
+                if (producto == null) {
+                    Producto nuevo = new Producto(nombre, precio, stock, rutaImagen[0], categoriaPersistente);
+                    productoDAO.agregarProducto(nuevo);
+                    JOptionPane.showMessageDialog(this, "Producto agregado.");
+                } else {
+                    producto.setNombre(nombre);
+                    producto.setPrecio(precio); // Usa BigDecimal en lugar de float
+                    producto.setStock(stock);
+                    producto.setImagen(rutaImagen[0]);
+                    producto.setIdCategoria(categoriaPersistente);
+                    productoDAO.actualizarProducto(producto);
+                    JOptionPane.showMessageDialog(this, "Producto actualizado.");
+                }
+
+                actualizarTabla();
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Formato numérico inválido.", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
-        return null;
     }
 
-    // Muestra un formulario para agregar un producto.
-    public void mostrarFormularioAgregar() {
-        ProductoForm form = new ProductoForm(this, "Agregar Producto");
-        form.setVisible(true);
-    }
 
-    // Muestra un formulario para editar el producto seleccionado.
-    public void mostrarFormularioEditar() {
-        Producto producto = getProductoSeleccionado();
-        if (producto != null) {
-            ProductoForm form = new ProductoForm(this, "Editar Producto", producto);
-            form.setVisible(true);
-        } else {
+            private void editarProducto() {
+        int fila = tabla.getSelectedRow();
+        if (fila == -1) {
             JOptionPane.showMessageDialog(this, "Seleccione un producto para editar.");
+            return;
+        }
+        Integer id = (Integer) modelo.getValueAt(fila, 0);
+        Producto producto = productoDAO.obtenerProductoConCategoriaPorId(id);
+        if (producto != null) {
+            mostrarFormulario(producto);
         }
     }
 
-    // Diálogo interno para agregar o editar un producto.
-    public static class ProductoForm extends JDialog {
-        private JTextField txtNombre;
-        private JTextArea txtDescripcion;
-        private JTextField txtPrecio;
-        private JTextField txtStock;
-        private JTextField txtImagen;
-        private JButton btnGuardar;
-        private JButton btnCancelar;
-
-        // Constructor para agregar.
-        public ProductoForm(Frame owner, String title) {
-            super(owner, title, true);
-            initComponents();
+    private void eliminarProducto() {
+        int fila = tabla.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this, "Seleccione un producto para eliminar.");
+            return;
         }
-
-        // Constructor para editar.
-        public ProductoForm(Frame owner, String title, Producto producto) {
-            this(owner, title);
-            txtNombre.setText(producto.getNombre());
-            txtDescripcion.setText(producto.getDescripcion());
-            txtPrecio.setText(producto.getPrecio() != null ? producto.getPrecio().toString() : "");
-            txtStock.setText(producto.getStock() != null ? producto.getStock().toString() : "");
-            txtImagen.setText(producto.getImagen());
-            // Los demás datos (como categoría y fecha) se podrían gestionar con controles adicionales.
-        }
-
-        private void initComponents() {
-            setLayout(new GridBagLayout());
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.insets = new Insets(5, 5, 5, 5);
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-
-            // Campo Nombre.
-            gbc.gridx = 0;
-            gbc.gridy = 0;
-            add(new JLabel("Nombre:"), gbc);
-            txtNombre = new JTextField(20);
-            gbc.gridx = 1;
-            add(txtNombre, gbc);
-
-            // Campo Descripción.
-            gbc.gridx = 0;
-            gbc.gridy = 1;
-            add(new JLabel("Descripción:"), gbc);
-            txtDescripcion = new JTextArea(4, 20);
-            JScrollPane spDescripcion = new JScrollPane(txtDescripcion);
-            gbc.gridx = 1;
-            add(spDescripcion, gbc);
-
-            // Campo Precio.
-            gbc.gridx = 0;
-            gbc.gridy = 2;
-            add(new JLabel("Precio:"), gbc);
-            txtPrecio = new JTextField(10);
-            gbc.gridx = 1;
-            add(txtPrecio, gbc);
-
-            // Campo Stock.
-            gbc.gridx = 0;
-            gbc.gridy = 3;
-            add(new JLabel("Stock:"), gbc);
-            txtStock = new JTextField(10);
-            gbc.gridx = 1;
-            add(txtStock, gbc);
-
-            // Campo Imagen.
-            gbc.gridx = 0;
-            gbc.gridy = 4;
-            add(new JLabel("Imagen:"), gbc);
-            txtImagen = new JTextField(20);
-            gbc.gridx = 1;
-            add(txtImagen, gbc);
-
-            // Panel de botones.
-            btnGuardar = new JButton("Guardar");
-            btnCancelar = new JButton("Cancelar");
-            JPanel panelBotones = new JPanel();
-            panelBotones.add(btnGuardar);
-            panelBotones.add(btnCancelar);
-            gbc.gridx = 0;
-            gbc.gridy = 5;
-            gbc.gridwidth = 2;
-            add(panelBotones, gbc);
-
-            pack();
-            setLocationRelativeTo(getOwner());
-
-            btnCancelar.addActionListener(e -> dispose());
-            // El botón guardar debería obtener los datos ingresados y pasarlos al controlador (por ejemplo, con un callback o actualizando la base de datos a través del DAO).
+        Integer id = (Integer) modelo.getValueAt(fila, 0);
+        int confirm = JOptionPane.showConfirmDialog(this, "¿Está seguro de eliminar este producto?", "Confirmar", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            productoDAO.eliminarProducto(id);
+            actualizarTabla();
         }
     }
+
+    private void actualizarTabla() {
+        modelo.setRowCount(0);
+        List<Producto> productos = productoDAO.obtenerProductosConCategoria();
+        for (Producto p : productos) {
+            ImageIcon icono = null;
+            if (p.getImagen() != null) {
+                Image img = new ImageIcon(p.getImagen()).getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+                icono = new ImageIcon(img);
+            }
+            modelo.addRow(new Object[]{
+                    p.getId(), p.getNombre(), p.getPrecio(), p.getStock(),
+                    (p.getIdCategoria() != null ? p.getIdCategoria().getNombre() : "Sin categoría"),
+                    icono
+            });
+        }
+    }
+
+    private void cargarCategorias(JComboBox<Categoria> combo) {
+        combo.removeAllItems();
+        List<Categoria> categorias = productoDAO.obtenerCategorias();
+        for (Categoria c : categorias) {
+            combo.addItem(c);
+        }
+    }
+
 }

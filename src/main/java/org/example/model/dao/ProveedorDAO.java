@@ -33,7 +33,7 @@ public class ProveedorDAO {
         EntityTransaction transaction = em.getTransaction();
         try {
             transaction.begin();
-            em.persist(proveedor);
+            em.merge(proveedor);
             transaction.commit();
             return true;
         } catch (Exception e) {

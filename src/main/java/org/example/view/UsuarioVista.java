@@ -1,45 +1,45 @@
 package org.example.view;
 
-import org.example.model.conection.ConexionBD;
+import org.example.model.dao.ProductoDAO;
+import org.example.model.entity.Producto;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.util.List;
 
 public class UsuarioVista extends JFrame {
     private JTextField campoBusqueda;
     private JButton botonBuscar;
     private JTable tablaProductos;
     private DefaultTableModel modeloTabla;
+    private JTextField campoCantidad;
     private JButton botonAgregarCarrito;
     private JButton botonEliminarCarrito;
     private JButton botonVerCarrito;
     private JButton botonFinalizarCompra;
     private JTextArea areaCarrito;
-    private JTextField campoCantidad;
+
+    private final ProductoDAO productoDAO = new ProductoDAO();
 
     public UsuarioVista() {
         setTitle("Tienda Friki - Usuario");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1000, 700);
+        setSize(900, 600);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
         ((JComponent) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        // Panel de búsqueda
-        JPanel panelSuperior = new JPanel();
-        panelSuperior.setLayout(new BoxLayout(panelSuperior, BoxLayout.LINE_AXIS));
+        // Panel superior: Búsqueda
+        JPanel panelBusqueda = new JPanel(new BorderLayout(5, 5));
         campoBusqueda = new JTextField();
-        botonBuscar = new JButton("🔍 Buscar");
-
-        panelSuperior.add(campoBusqueda);
-        panelSuperior.add(botonBuscar);
-        panelSuperior.setBorder(BorderFactory.createTitledBorder("Buscar Productos"));
-        add(panelSuperior, BorderLayout.NORTH);
+        botonBuscar = new JButton("Buscar");
+        panelBusqueda.add(new JLabel("Buscar producto: "), BorderLayout.WEST);
+        panelBusqueda.add(campoBusqueda, BorderLayout.CENTER);
+        panelBusqueda.add(botonBuscar, BorderLayout.EAST);
+        add(panelBusqueda, BorderLayout.NORTH);
 
         // Tabla de productos
         modeloTabla = new DefaultTableModel(new Object[]{"Imagen", "Nombre", "Precio", "Stock"}, 0) {
@@ -47,93 +47,102 @@ public class UsuarioVista extends JFrame {
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
-        };
 
-        tablaProductos = new JTable(modeloTabla) {
             @Override
-            public Class<?> getColumnClass(int column) {
-                return (column == 0) ? ImageIcon.class : Object.class;
+            public Class<?> getColumnClass(int columnIndex) {
+                return columnIndex == 0 ? ImageIcon.class : Object.class;
             }
         };
 
-        tablaProductos.setRowHeight(100);
+        tablaProductos = new JTable(modeloTabla);
+        tablaProductos.setRowHeight(80);
         JScrollPane scrollTabla = new JScrollPane(tablaProductos);
-        scrollTabla.setBorder(BorderFactory.createTitledBorder("Listado de Productos"));
+        scrollTabla.setBorder(BorderFactory.createTitledBorder("Productos disponibles"));
         add(scrollTabla, BorderLayout.CENTER);
 
-        // Panel de carrito y cantidad
+        // Panel inferior: Carrito y acciones
         JPanel panelInferior = new JPanel(new BorderLayout(10, 10));
-        JPanel panelCarrito = new JPanel(new GridLayout(2, 1));
-        areaCarrito = new JTextArea(5, 40);
+
+        // Área carrito
+        areaCarrito = new JTextArea();
         areaCarrito.setEditable(false);
-        panelCarrito.add(new JScrollPane(areaCarrito));
+        JScrollPane scrollCarrito = new JScrollPane(areaCarrito);
+        scrollCarrito.setPreferredSize(new Dimension(300, 150));
+        scrollCarrito.setBorder(BorderFactory.createTitledBorder("Carrito"));
+        panelInferior.add(scrollCarrito, BorderLayout.EAST);
 
-        JPanel panelCantidad = new JPanel(new FlowLayout());
-        panelCantidad.add(new JLabel("Cantidad:"));
+        // Panel de controles: cantidad y botones
+        JPanel panelControles = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        panelControles.add(new JLabel("Cantidad:"));
         campoCantidad = new JTextField("1", 5);
-        panelCantidad.add(campoCantidad);
+        panelControles.add(campoCantidad);
 
-        botonAgregarCarrito = new JButton("🛒 Agregar al carrito");
-        botonEliminarCarrito = new JButton("❌ Eliminar del carrito");
-        botonVerCarrito = new JButton("📦 Ver carrito");
-        botonFinalizarCompra = new JButton("✅ Finalizar compra");
+        botonAgregarCarrito = new JButton("Agregar al carrito");
+        botonEliminarCarrito = new JButton("Eliminar del carrito");
+        botonVerCarrito = new JButton("Ver carrito");
+        botonFinalizarCompra = new JButton("Finalizar compra");
 
-        panelCantidad.add(botonAgregarCarrito);
-        panelCantidad.add(botonEliminarCarrito);
-        panelCantidad.add(botonVerCarrito);
-        panelCantidad.add(botonFinalizarCompra);
+        panelControles.add(botonAgregarCarrito);
+        panelControles.add(botonEliminarCarrito);
+        panelControles.add(botonVerCarrito);
+        panelControles.add(botonFinalizarCompra);
 
-        panelCarrito.add(panelCantidad);
-        panelInferior.add(panelCarrito, BorderLayout.CENTER);
+        panelInferior.add(panelControles, BorderLayout.CENTER);
         add(panelInferior, BorderLayout.SOUTH);
 
-        // Evento para finalizar compra y reducir stock
-        botonFinalizarCompra.addActionListener(e -> {
-            int filaSeleccionada = tablaProductos.getSelectedRow();
-            if (filaSeleccionada != -1) {
-                int idProducto = (int) modeloTabla.getValueAt(filaSeleccionada, 1); // Suponiendo que el ID está en la columna 1
-
-                try (Connection conexion = ConexionBD.conectar();
-                     PreparedStatement stmt = conexion.prepareStatement("UPDATE productos SET stock = stock - ? WHERE id_producto = ?")) {
-
-                    // ✅ Convertir el contenido del JTextField a un número
-                    int cantidadSeleccionada;
-                    try {
-                        cantidadSeleccionada = Integer.parseInt(campoCantidad.getText());
-                    } catch (NumberFormatException ex) {
-                        JOptionPane.showMessageDialog(this, "❌ Ingresa un número válido en la cantidad.");
-                        return;
-                    }
-
-                    stmt.setInt(1, cantidadSeleccionada);
-                    stmt.setInt(2, idProducto);
-                    stmt.executeUpdate();
-
-                    JOptionPane.showMessageDialog(this, "✅ Compra realizada. Stock actualizado.");
-                } catch (SQLException ex) {
-                    System.err.println("❌ Error al actualizar stock: " + ex.getMessage());
-                    JOptionPane.showMessageDialog(this, "Error al procesar la compra.");
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "❌ Ingresa un número válido en el campo de cantidad.");
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Selecciona un producto antes de finalizar la compra.");
-            }
-        });
-
-
-
-
+        cargarProductos();
     }
 
-    public DefaultTableModel getModeloTabla() { return modeloTabla; }
+    private void cargarProductos() {
+        modeloTabla.setRowCount(0);
+        List<Producto> productos = productoDAO.obtenerProductosConCategoria();
+
+        for (Producto p : productos) {
+            System.out.println("Cargando producto: " + p.getNombre());
+
+            // Cargar imagen correctamente
+            ImageIcon icono = null;
+            if (p.getImagen() != null && !p.getImagen().isEmpty()) {
+                try {
+                    Image img = new ImageIcon(p.getImagen()).getImage().getScaledInstance(60, 60, Image.SCALE_SMOOTH);
+                    icono = new ImageIcon(img);
+                } catch (Exception ex) {
+                    System.err.println("❌ Error al cargar imagen: " + ex.getMessage());
+                }
+            }
+
+            modeloTabla.addRow(new Object[]{
+                    icono,
+                    p.getNombre(),
+                    String.format("$%.2f", p.getPrecio()), // Usa directamente p.getPrecio()
+                    p.getStock() > 0 ? p.getStock() + " unidades" : "Sin stock"
+            });
+        }
+
+        // Aplicar CellRenderer correctamente después de llenar la tabla
+        tablaProductos.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                           boolean hasFocus, int row, int column) {
+                if (value instanceof ImageIcon) {
+                    JLabel label = new JLabel((ImageIcon) value);
+                    label.setHorizontalAlignment(JLabel.CENTER);
+                    return label;
+                }
+                return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            }
+        });
+    }
+
+    // Getters
     public JTextField getCampoBusqueda() { return campoBusqueda; }
     public JButton getBotonBuscar() { return botonBuscar; }
     public JTable getTablaProductos() { return tablaProductos; }
+    public DefaultTableModel getModeloTabla() { return modeloTabla; }
     public JTextField getCampoCantidad() { return campoCantidad; }
-    public JTextArea getAreaCarrito() { return areaCarrito; }
     public JButton getBotonAgregarCarrito() { return botonAgregarCarrito; }
     public JButton getBotonEliminarCarrito() { return botonEliminarCarrito; }
     public JButton getBotonVerCarrito() { return botonVerCarrito; }
     public JButton getBotonFinalizarCompra() { return botonFinalizarCompra; }
+    public JTextArea getAreaCarrito() { return areaCarrito; }
 }

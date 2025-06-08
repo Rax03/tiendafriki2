@@ -23,6 +23,12 @@ public class UsuarioService {
                 return null;
             }
 
+            // Evitar posibles errores si el usuario tiene valores nulos
+            if (usuario.getSalt() == null || usuario.getContraseñaHash() == null) {
+                logger.warning("❌ Datos de autenticación incompletos para el usuario: " + email);
+                return null;
+            }
+
             boolean passwordValida = HashUtil.verificarPassword(password, usuario.getSalt(), usuario.getContraseñaHash());
             if (passwordValida) {
                 logger.info("✅ Usuario autenticado correctamente: " + email);
@@ -32,7 +38,7 @@ public class UsuarioService {
                 return null;
             }
         } catch (Exception e) {
-            logger.severe("Error al autenticar usuario: " + e.getMessage());
+            logger.severe("❌ Error al autenticar usuario: " + e.getMessage());
             return null;
         }
     }
@@ -53,12 +59,13 @@ public class UsuarioService {
             boolean registrado = usuarioDAO.registrarUsuario(usuario);
             if (registrado) {
                 logger.info("✅ Usuario registrado exitosamente: " + usuario.getEmail());
+                return true;
             } else {
-                logger.warning("❌ Error al registrar usuario: " + usuario.getEmail());
+                logger.warning("❌ Fallo en el registro del usuario: " + usuario.getEmail());
+                return false;
             }
-            return registrado;
         } catch (Exception e) {
-            logger.severe("Error al registrar usuario: " + e.getMessage());
+            logger.severe("❌ Error al registrar usuario: " + e.getMessage());
             return false;
         }
     }
